@@ -34,7 +34,10 @@ PLACARD = (
     "answered none. Gift of the Typing Pool."
 )
 
-OUTPUT_PATH = "/output/entry.txt"
+def output_path() -> str:
+    """Where the placard goes: the harness output dir when set, else /output."""
+    base = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    return os.path.join(base, "entry.txt")
 
 
 def validate(text: str) -> None:
@@ -52,11 +55,18 @@ def validate(text: str) -> None:
 
 def main() -> int:
     validate(PLACARD)
-    os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
-    with open(OUTPUT_PATH, "w", encoding="utf-8", newline="\n") as fh:
+    path = output_path()
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(PLACARD)
-    print(f"Wrote {len(PLACARD)} chars to {OUTPUT_PATH}")
+    print(f"Wrote {len(PLACARD)} chars to {path}")
     print(PLACARD)
+    # Read-back check: what landed on disk must be the placard, byte for byte.
+    with open(path, "rb") as fh:
+        written = fh.read()
+    if written != PLACARD.encode("utf-8"):
+        raise ValueError(f"read-back mismatch in {path}")
+    print(f"Verified {len(written)} bytes on disk, identical to the placard")
     return 0
 
 
